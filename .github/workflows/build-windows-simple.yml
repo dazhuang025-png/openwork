@@ -39,20 +39,35 @@ jobs:
           Get-Content $path
 
       - name: Build Windows App
-        run: npm run build
+        run: npm run build -- --verbose
         env:
           TAURI_SKIP_UPDATER_SIGNATURE: true
 
-      - name: Upload MSI
+      - name: List Build Output (Debug)
+        shell: powershell
+        run: |
+          Write-Host "Listing src-tauri/target/release:"
+          Get-ChildItem -Path "src-tauri/target/release" -ErrorAction SilentlyContinue
+          Write-Host "Listing src-tauri/target/release/bundle:"
+          Get-ChildItem -Path "src-tauri/target/release/bundle" -Recurse -ErrorAction SilentlyContinue
+
+      - name: Upload Raw Executable
         uses: actions/upload-artifact@v4
         with:
-          name: OpenWork-Windows-Installer
+          name: OpenWork-Raw-Exe
+          path: src-tauri/target/release/OpenWork.exe
+          if-no-files-found: warn
+
+      - name: Upload Installer (MSI)
+        uses: actions/upload-artifact@v4
+        with:
+          name: OpenWork-Installer-MSI
           path: src-tauri/target/release/bundle/msi/*.msi
           if-no-files-found: warn
 
-      - name: Upload EXE
+      - name: Upload Installer (EXE)
         uses: actions/upload-artifact@v4
         with:
-          name: OpenWork-Windows-Exe
+          name: OpenWork-Installer-EXE
           path: src-tauri/target/release/bundle/nsis/*.exe
           if-no-files-found: warn
