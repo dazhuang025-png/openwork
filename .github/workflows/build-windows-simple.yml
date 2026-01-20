@@ -15,23 +15,32 @@ jobs:
         with:
           node-version: 20
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
-
-      - name: Install dependencies
-        run: pnpm install
+      - name: Install dependencies (npm)
+        run: npm install
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: x86_64-pc-windows-msvc
 
+      - name: Patch tauri.conf.json (Use npm & Disable Updater)
+        shell: powershell
+        run: |
+          $path = "src-tauri/tauri.conf.json"
+          $content = Get-Content $path -Raw
+          # Configure to use npm instead of pnpm
+          $content = $content -replace 'pnpm dev:web', 'npm run dev:web'
+          $content = $content -replace 'pnpm build:web', 'npm run build:web'
+          # Disable updater artifacts to skip signing requirement
+          $content = $content -replace '"createUpdaterArtifacts": true', '"createUpdaterArtifacts": false'
+          Set-Content -Path $path -Value $content
+          
+          Write-Host "Patched tauri.conf.json content:"
+          Get-Content $path
+
       - name: Build Windows App
-        run: pnpm tauri build
+        run: npm run build
         env:
-          # Disable updater to avoid signing key errors if strict
           TAURI_SKIP_UPDATER_SIGNATURE: true
 
       - name: Upload MSI
